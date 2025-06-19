@@ -156,7 +156,7 @@ class BlogScraper(BaseScraper):
                 soup = BeautifulSoup(page_source, 'html.parser')
                 title = self._extract_title(soup) or ""
                 author = self._extract_author(soup) or ""
-                        content = self._extract_content_manually(soup)
+                content = self._extract_content_manually(soup)
                 if not content.strip():
                     content = "\n\n".join([p.get_text() for p in soup.find_all('p')])
                 if content.strip():
