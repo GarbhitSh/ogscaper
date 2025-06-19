@@ -58,9 +58,9 @@ class BlogScraper(BaseScraper):
 
             # --- STRATEGY 1: newspaper3k ---
             try:
-                    article = Article(url)
-                    article.set_html(html_text)
-                    article.parse()
+                article = Article(url)
+                article.set_html(html_text)
+                article.parse()
                 if article.text.strip():
                     title = article.title or self._extract_title(soup) or ""
                     author = ", ".join(article.authors) if article.authors else self._extract_author(soup) or ""
