@@ -167,47 +167,44 @@ uvicorn fastapi_server:app --reload
 ### **Endpoints**
 
 #### **POST `/crawl`**
-Trigger the content crawler to crawl a website and return discovered content URLs.
+Discover all content URLs from a start URL.
+- **Request Body:**
+  ```json
+  { "start_url": "https://example.com", "max_pages": 10 }
+  ```
+- **Response:**
+  ```json
+  { "results": { "blog": ["..."], "unknown": ["..."] } }
+  ```
 
-**Request Body:**
-```json
-{
-  "start_url": "https://example.com",  // (required) The URL to start crawling from
-  "max_pages": 10                      // (optional) Maximum number of pages to crawl (default: 10)
-}
-```
+#### **POST `/scrape`**
+Scrape a single URL and return the extracted content.
+- **Request Body:**
+  ```json
+  { "url": "https://example.com/blog/post", "base_url": null }
+  ```
+- **Response:**
+  ```json
+  { "items": [ { "title": "...", "content": "...", ... } ] }
+  ```
 
-**Example:**
-```bash
-curl -X POST "http://localhost:8000/crawl" \
-  -H "Content-Type: application/json" \
-  -d '{"start_url": "https://quill.co/blog", "max_pages": 5}'
-```
+#### **POST `/crawl-and-scrape`**
+Crawl, then scrape all discovered URLs, and return the final JSON output (full pipeline).
+- **Request Body:**
+  ```json
+  { "team_id": "teamXYZ", "start_url": "https://example.com", "max_pages": 10 }
+  ```
+- **Response:**
+  ```json
+  { "team_id": "teamXYZ", "items": [ { "title": "...", "content": "...", ... } ] }
+  ```
 
-**Response:**
-```json
-{
-  "results": {
-    "blog": [
-      "https://quill.co/blog/post1",
-      "https://quill.co/blog/post2"
-    ],
-    "unknown": [
-      "https://quill.co/other"
-    ]
-  }
-}
-```
+- All endpoints use the orchestrator and scrapers as appropriate.
+- The `/crawl-and-scrape` endpoint gives you the full end-to-end result in the required JSON schema.
 
-#### **API Documentation**
-- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+You can test these endpoints using Swagger UI at `/docs` or with any HTTP client.
 
 ---
-
-
-
-
 
 ## **Troubleshooting**
 
