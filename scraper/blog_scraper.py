@@ -26,17 +26,22 @@ class BlogScraper(BaseScraper):
             r'/blog/\d{4}/\d{2}/\d{2}/',  # Date-based URLs
             r'/blog/\d{4}/\d{2}/',        # Month-based URLs
             r'/blog/\d{4}/',              # Year-based URLs
-            r'/blog/[^/]+$',              # Simple blog post URLs
-            r'/posts/[^/]+$',             # Alternative blog post URLs
-            r'/article/[^/]+$',           # Article URLs
-            r'\.substack\.com/p/',        # Substack posts
+            r'/blog/[^/]+$',               # Simple blog post URLs
+            r'/posts/[^/]+$',              # Alternative blog post URLs
+            r'/article/[^/]+$',            # Article URLs
+            r'\.substack\.com/p/',       # Substack posts
             r'medium\.com/@[^/]+/[^/]+$', # Medium posts
             r'dev\.to/[^/]+/[^/]+$',      # Dev.to posts
+            # General blog/article patterns:
+            r'/\d{4}/\d{2}/\d{2}/[^/]+\.html$',  # YYYY/MM/DD/post-title.html
+            r'/\d{4}/\d{2}/[^/]+\.html$',        # YYYY/MM/post-title.html
+            r'/\d{4}/[^/]+\.html$',              # YYYY/post-title.html
+            r'/[^/]+\.html$',                     # any .html at root or subpath
         ]
         return any(re.search(pattern, url.lower()) for pattern in blog_post_patterns)
 
     async def scrape(self, url: str, base_url: str = None) -> List[ContentItem]:
-        """Scrape a blog post and return its content using multiple fallback strategies."""
+        """Scrape a blog post and return its content using multiple fallback strategies, including Selenium and aggressive fallback."""
         try:
             # Normalize URL to absolute
             if base_url:
@@ -125,6 +130,75 @@ class BlogScraper(BaseScraper):
                     )]
             except Exception as e:
                 self.logger.warning(f"Generic <p> tag extraction failed: {str(e)}")
+
+            # --- STRATEGY 4: Selenium Fallback ---
+            try:
+                from selenium import webdriver
+                from selenium.webdriver.chrome.service import Service
+                from selenium.webdriver.chrome.options import Options
+                from webdriver_manager.chrome import ChromeDriverManager
+                import time
+                chrome_options = Options()
+                chrome_options.add_argument('--headless')
+                chrome_options.add_argument('--no-sandbox')
+                chrome_options.add_argument('--disable-dev-shm-usage')
+                driver_path = ChromeDriverManager().install()
+                import os
+                if os.name == 'nt' and not driver_path.endswith('chromedriver.exe'):
+                    exe_path = os.path.join(os.path.dirname(driver_path), 'chromedriver.exe')
+                    if os.path.exists(exe_path):
+                        driver_path = exe_path
+                driver = webdriver.Chrome(service=Service(driver_path), options=chrome_options)
+                driver.get(url)
+                time.sleep(2)
+                page_source = driver.page_source
+                driver.quit()
+                soup = BeautifulSoup(page_source, 'html.parser')
+                title = self._extract_title(soup) or ""
+                author = self._extract_author(soup) or ""
+                content = self._extract_content_manually(soup)
+                if not content.strip():
+                    content = "\n\n".join([p.get_text() for p in soup.find_all('p')])
+                if content.strip():
+                    content_md = self.h2t.handle(content)
+                    content_md = self._clean_content(content_md)
+                    content_md = re.sub(r'\n{3,}', '\n\n', content_md.strip())
+                    content_md = re.sub(r'<[^>]+>', '', content_md)
+                    content_md = html.unescape(content_md.encode('utf-8').decode('unicode_escape'))
+                    title_clean = html.unescape(title.encode('utf-8').decode('unicode_escape'))
+                    return [ContentItem(
+                        title=self.normalize_content(title_clean),
+                        content=self.normalize_content(content_md),
+                        content_type="blog",
+                        source_url=url,
+                        author=author,
+                        user_id=""
+                    )]
+            except Exception as e:
+                self.logger.warning(f"Selenium fallback extraction failed: {str(e)}")
+
+            # --- STRATEGY 5: Aggressive Fallback (all visible text from <body>) ---
+            try:
+                title = self._extract_title(soup) or ""
+                author = self._extract_author(soup) or ""
+                content = soup.body.get_text(separator='\n', strip=True) if soup.body else ""
+                if content.strip():
+                    content_md = self.h2t.handle(content)
+                    content_md = self._clean_content(content_md)
+                    content_md = re.sub(r'\n{3,}', '\n\n', content_md.strip())
+                    content_md = re.sub(r'<[^>]+>', '', content_md)
+                    content_md = html.unescape(content_md.encode('utf-8').decode('unicode_escape'))
+                    title_clean = html.unescape(title.encode('utf-8').decode('unicode_escape'))
+                    return [ContentItem(
+                        title=self.normalize_content(title_clean),
+                        content=self.normalize_content(content_md),
+                        content_type="blog",
+                        source_url=url,
+                        author=author,
+                        user_id=""
+                    )]
+            except Exception as e:
+                self.logger.warning(f"Aggressive fallback extraction failed: {str(e)}")
 
             # If all strategies fail
             self.logger.error(f"All blog scraping strategies failed for {url}")

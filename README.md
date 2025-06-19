@@ -105,7 +105,9 @@ python setup.py
   1. Tries `newspaper3k` for extraction.
   2. If that fails, uses manual BeautifulSoup extraction (custom logic for main content).
   3. If that fails, falls back to extracting all `<p>` tags as a last resort.
-  This ensures robust extraction from a wide variety of blog sites.
+  4. If that fails, uses Selenium to render the page and extract content (for JavaScript-heavy sites).
+  5. If all else fails, aggressively extracts all visible text from the `<body>` tag.
+  This ensures robust extraction from a wide variety of blog sites, including those with non-standard or dynamic structures.
 - **PDF Scraper:** Uses `pdfplumber` for robust text extraction, skips images, cleans filler lines, and splits content into sentence-aligned chunks. Outputs as markdown.
 - **Content Normalization:** All content is cleaned, unicode-normalized, and output as markdown using `html2text`.
 
