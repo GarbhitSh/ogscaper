@@ -45,11 +45,7 @@ GREAT/
 ## **Setup & Installation**
 
 ### **1. Clone the Repository**
-```bash
-# Clone the repo (replace <repo-url> with your repository URL)
-git clone <repo-url>
-cd GREAT
-```
+
 
 ### **2. Create and Activate a Virtual Environment**
 ```bash
@@ -117,6 +113,45 @@ python setup.py
 - **Intelligent Chunking:** For long-form content (e.g., PDFs), splits output into ~6000 character chunks, always at sentence boundaries, ensuring readability and logical completeness.
 
 ---
+## **CLI Usage**
+
+### **Basic Usage**
+```bash
+python main.py --team-id "aline123" --urls "https://quill.co/blog" --output "output.json"
+```
+
+### **Scraping a PDF**
+```bash
+python main.py --team-id "aline123" --urls "C:/path/to/file.pdf" --output "output.json"
+```
+
+### **Multiple Sources**
+```bash
+python main.py --team-id "aline123" --urls "https://example.com/blog" "C:/path/to/file.pdf" --output "output.json"
+```
+
+---
+
+## **Output Schema**
+
+All results are saved in a consistent JSON schema:
+
+```json
+{
+  "team_id": "aline123",
+  "items": [
+    {
+      "title": "Item Title",
+      "content": "Markdown content",
+      "content_type": "blog|podcast_transcript|call_transcript|linkedin_post|reddit_comment|book|other",
+      "source_url": "optional-url",
+      "author": "",
+      "user_id": ""
+    }
+  ]
+}
+```
+
 
 ## **API Usage (FastAPI Server)**
 
@@ -168,66 +203,9 @@ curl -X POST "http://localhost:8000/crawl" \
 
 ---
 
-## **CLI Usage**
 
-### **Basic Usage**
-```bash
-python main.py --team-id "aline123" --urls "https://quill.co/blog" --output "output.json"
-```
 
-### **Scraping a PDF**
-```bash
-python main.py --team-id "aline123" --urls "C:/path/to/file.pdf" --output "output.json"
-```
 
-### **Multiple Sources**
-```bash
-python main.py --team-id "aline123" --urls "https://example.com/blog" "C:/path/to/file.pdf" --output "output.json"
-```
-
----
-
-## **Output Schema**
-
-All results are saved in a consistent JSON schema:
-
-```json
-{
-  "team_id": "aline123",
-  "items": [
-    {
-      "title": "Item Title",
-      "content": "Markdown content",
-      "content_type": "blog|podcast_transcript|call_transcript|linkedin_post|reddit_comment|book|other",
-      "source_url": "optional-url",
-      "author": "",
-      "user_id": ""
-    }
-  ]
-}
-```
-
----
-
-## **Extending the System**
-
-- **Add a new content type:**  
-  1. Create a new scraper class in `scraper/` inheriting from `BaseScraper`.
-  2. Implement `can_handle(url)` and `scrape(url, base_url=None)`.
-  3. Register your scraper in `orchestrator.py`.
-
-- **Add new crawling logic:**  
-  Extend `content_crawler.py` with new strategies (e.g., for new site types or APIs).
-
----
-
-## **Dependencies**
-
-- `fastapi`, `uvicorn`, `pydantic` (for API)
-- `pdfplumber`, `html2text`, `beautifulsoup4`, `playwright`, `selenium`, `newspaper3k`, `tqdm`, `aiohttp`, `requests`, `cloudscraper`, `undetected-chromedriver`, `fake-useragent`, and more.
-- For PDF OCR (optional): `pytesseract`, `pdf2image`, `Pillow`, and Tesseract OCR binary.
-
----
 
 ## **Troubleshooting**
 
@@ -238,15 +216,3 @@ All results are saved in a consistent JSON schema:
 
 ---
 
-## **Contributing**
-
-1. Fork the repo
-2. Create a feature branch
-3. Commit and push your changes
-4. Open a Pull Request
-
----
-
-## **License**
-
-MIT License 
