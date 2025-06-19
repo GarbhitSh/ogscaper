@@ -74,7 +74,7 @@ python setup.py
 ---
 
 ## **Dataflow & Process**
-![Datafloe](dg.png)
+![Datafloe](dgi.png)
 1. **Input:**  
    - URLs (blog, article, or PDF) or file paths are provided via CLI or API.
 2. **Content Type Detection:**  
